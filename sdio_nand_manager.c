@@ -414,7 +414,7 @@ void writeToFile(int nandType, int driveLetter, const char *toFile)
     // open device now
     writeHandler = CreateFile (toFile, GENERIC_WRITE,
                                 FILE_SHARE_WRITE, NULL,
-                                OPEN_EXISTING,
+                                TRUNCATE_EXISTING,
                                 FILE_FLAG_NO_BUFFERING | FILE_FLAG_WRITE_THROUGH | FILE_FLAG_RANDOM_ACCESS,
                                 NULL);
 
@@ -528,10 +528,15 @@ void writeToFile(int nandType, int driveLetter, const char *toFile)
     SetFilePointer(readHandler, seek_low, &seek_high, FILE_BEGIN);
 
     int error = 0;
+    size_t blockSize = BLOCKSIZE;
     size_t tickStart = GetTickCount();
     while(ullDone < nand_size) {
         memset(dataBuffer, 0xff, BLOCKSIZE);
-        if(ReadFile(readHandler, dataBuffer, BLOCKSIZE, &sRead, 0) == 0) {
+        if(ullDone + blockSize > nand_size) {
+            blockSize = nand_size - ullDone;
+        }
+
+        if(ReadFile(readHandler, dataBuffer, blockSize, &sRead, 0) == 0) {
             print_output("Read failure on  %u %llu %u\n", sRead, ullDone, GetLastError());
             error = 1;
             break;
@@ -628,7 +633,7 @@ int WINAPI WinMain (HINSTANCE hThisInstance,
     mainHwnd = CreateWindowEx (
            0,                   /* Extended possibilites for variation */
            szClassName,         /* Classname */
-           "sdio nand manager v1.2 by Dimok",       /* Title Text */
+           "sdio nand manager v1.3 by Dimok",       /* Title Text */
            WS_OVERLAPPEDWINDOW, /* default window */
            CW_USEDEFAULT,       /* Windows decides the position */
            CW_USEDEFAULT,       /* where the window ends up on the screen */
